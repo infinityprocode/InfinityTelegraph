@@ -73,8 +73,14 @@ def _llm(asset: str, mv: dict, heads: list[str]) -> dict:
             "options": {"temperature": 0.3},
         })
         data = json.loads(r.json()["message"]["content"])
-        note = re.sub(r"[—–]", ",", str(data.get("nota", "")))[:180]
-        return {"catalisador": bool(data.get("catalisador")), "sentimento": data.get("sentimento", "neutro"),
+        note = re.sub(r"[—–]", ",", str(data.get("nota", "")).strip())[:180]
+        sent = data.get("sentimento", "neutro")
+        cat = bool(data.get("catalisador"))
+        if not note:
+            note = (f"movimento com catalisador de notícia ({sent}); "
+                    + ("evitar fade" if not data.get("fade_ok", True) else "possível exagero, fade")) if cat \
+                   else "movimento sem catalisador claro, tende a reverter"
+        return {"catalisador": cat, "sentimento": sent,
                 "fade_ok": bool(data.get("fade_ok", True)), "nota": note, "headlines": rel}
     except Exception as e:
         return {"catalisador": False, "sentimento": "neutro", "fade_ok": True,
