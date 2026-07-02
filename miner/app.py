@@ -33,6 +33,7 @@ class SignalResponse(BaseModel):
     confidence: float   # 0..1
     as_of: str
     model: str
+    source: str = "model"   # "model" (real) | "baseline" (degradado: sem modelo/dados)
 
 
 @app.get("/health")

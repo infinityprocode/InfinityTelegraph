@@ -14,6 +14,10 @@ import httpx
 
 BINANCE = "https://api.binance.com/api/v3/klines"
 
+# cache curto em memória (evita rate-limit/ban da Binance com o painel público batendo a cada 30s).
+_CACHE: dict = {}
+_TTL = 45  # segundos
+
 
 def _symbol(asset: str) -> str:
     a = asset.upper().replace("USDT", "").replace("USD", "")
@@ -22,7 +26,12 @@ def _symbol(asset: str) -> str:
 
 def fetch_ohlcv(asset: str, interval: str = "1h", limit: int = 1000,
                 end_ms: Optional[int] = None) -> pd.DataFrame:
-    """Fetch OHLCV candles. Paginates backward if limit > 1000."""
+    """Fetch OHLCV candles. Paginates backward if limit > 1000. Cacheado (TTL) quando ao vivo."""
+    key = (asset.upper(), interval, limit)
+    if end_ms is None:
+        hit = _CACHE.get(key)
+        if hit and (time.time() - hit[0]) < _TTL:
+            return hit[1].copy()
     out: list[list] = []
     remaining = limit
     params_end = end_ms
@@ -48,7 +57,10 @@ def fetch_ohlcv(asset: str, interval: str = "1h", limit: int = 1000,
     for col in ("open", "high", "low", "close", "volume"):
         df[col] = df[col].astype(float)
     df["ts"] = pd.to_datetime(df["open_time"], unit="ms", utc=True)
-    return df.drop_duplicates("open_time").reset_index(drop=True)
+    df = df.drop_duplicates("open_time").reset_index(drop=True)
+    if end_ms is None:
+        _CACHE[key] = (time.time(), df.copy())
+    return df
 
 
 def _rsi(close: pd.Series, n: int = 14) -> pd.Series:

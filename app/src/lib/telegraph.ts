@@ -14,6 +14,7 @@ export type Signal = {
   confidence: number;
   as_of: string;
   model: string;
+  source?: "model" | "baseline";
 };
 
 const DISPATCHER = process.env.TELEGRAPH_DISPATCHER_URL || "";
@@ -23,7 +24,7 @@ const DIRECT = process.env.MINER_DIRECT_URL || "http://127.0.0.1:8080";
 // DIRECT path — used until the miner is registered and x402 is wired.
 export async function getSignalDirect(symbol: string, horizon = "1h"): Promise<Signal> {
   const url = `${DIRECT}/v1/signal?symbol=${encodeURIComponent(symbol)}&horizon=${encodeURIComponent(horizon)}`;
-  const r = await fetch(url, { cache: "no-store" });
+  const r = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(5000) });
   if (!r.ok) throw new Error(`miner ${r.status}`);
   return (await r.json()) as Signal;
 }

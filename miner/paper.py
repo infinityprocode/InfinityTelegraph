@@ -30,7 +30,9 @@ SL = 0.005   # -0.5% stop     (keeps loss <= win: the asymmetry that makes it wo
 
 
 def _db() -> sqlite3.Connection:
-    c = sqlite3.connect(DB)
+    c = sqlite3.connect(DB, timeout=5)
+    c.execute("PRAGMA journal_mode=WAL")
+    c.execute("PRAGMA busy_timeout=5000")
     c.execute("""create table if not exists preds(
         id integer primary key, asset text, direction text, confidence real,
         entry_price real, entry_ts integer, horizon_h int,
@@ -51,6 +53,8 @@ def snapshot() -> int:
             price = float(df["close"].iloc[-1])
             iso = df["ts"].iloc[-1].strftime("%Y-%m-%dT%H:%M:%SZ")
             sig = compute_signal(a, f"{HORIZON_H}h", iso)
+            if sig.get("source") != "model":
+                continue  # não valida ruído do baseline (modelo/dados ausentes)
             c.execute("insert into preds(asset,direction,confidence,entry_price,entry_ts,horizon_h) values(?,?,?,?,?,?)",
                       (a, sig["direction"], sig["confidence"], price, _now(), HORIZON_H))
             n += 1
@@ -67,24 +71,27 @@ def settle() -> int:
     rows = c.execute("select id,asset,direction,entry_price,entry_ts,horizon_h from preds where settled=0 and entry_ts<=?", (cutoff,)).fetchall()
     for pid, asset, direction, entry, ets, hz in rows:
         try:
-            df = fetch_ohlcv(asset, "1h", limit=48)
-            window = df[(df["ts"].astype("int64") // 10**9) > ets]
+            # Liquida em candles de 1 MINUTO (não 1h): com alvo/stop de 0,5%, candle de 1h abraça
+            # os dois níveis e mata o teste. 1m cobre a trajetória intrabar de verdade.
+            df = fetch_ohlcv(asset, "1m", limit=400)
+            secs = df["ts"].astype("int64") // 10**9
+            window = df[(secs > ets) & (secs <= ets + hz * 3600)]
             if window.empty:
                 continue
             long = direction == "up"
             tp_px = entry * (1 + TP) if long else entry * (1 - TP)
             sl_px = entry * (1 - SL) if long else entry * (1 + SL)
             outcome, exit_px = None, None
-            for _, k in window.head(hz).iterrows():
+            for _, k in window.iterrows():
                 hi, lo = float(k["high"]), float(k["low"])
                 hit_tp = hi >= tp_px if long else lo <= tp_px
                 hit_sl = lo <= sl_px if long else hi >= sl_px
-                if hit_sl:  # conservative: if both in same candle, assume stop first
+                if hit_sl:  # em 1m, TP+SL no mesmo candle é raro; empate = stop (conservador)
                     outcome, exit_px = "loss", sl_px; break
                 if hit_tp:
                     outcome, exit_px = "win", tp_px; break
-            if outcome is None:  # neither hit: close at last price in window
-                exit_px = float(window.head(hz)["close"].iloc[-1])
+            if outcome is None:  # nem TP nem SL no horizonte: fecha no último preço da janela
+                exit_px = float(window["close"].iloc[-1])
                 move = (exit_px - entry) / entry * (1 if long else -1)
                 outcome = "win" if move > 0 else "loss"
             move = (exit_px - entry) / entry * (1 if long else -1)

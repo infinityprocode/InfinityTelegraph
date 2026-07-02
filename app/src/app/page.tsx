@@ -22,9 +22,10 @@ export default function Page() {
   const [mounted, setMounted] = useState(false);
 
   const load = async () => {
-    try { const r = await fetch("/api/signals?horizon=4h", { cache: "no-store" }); const d = await r.json(); setItems(d.items || []); setAt(d.at || Date.now()); } catch { /* keep */ }
-    try { const p = await fetch("/api/paper", { cache: "no-store" }); if (p.ok) setPaper(await p.json()); } catch { /* keep */ }
-    try { const s = await fetch("/api/setups", { cache: "no-store" }); if (s.ok) setSetups(await s.json()); } catch { /* keep */ }
+    const t = () => ({ cache: "no-store" as const, signal: AbortSignal.timeout(6000) });
+    try { const r = await fetch("/api/signals?horizon=4h", t()); const d = await r.json(); setItems(d.items || []); setAt(d.at || Date.now()); } catch { /* keep */ }
+    try { const p = await fetch("/api/paper", t()); if (p.ok) setPaper(await p.json()); } catch { /* keep */ }
+    try { const s = await fetch("/api/setups", t()); if (s.ok) setSetups(await s.json()); } catch { /* keep */ }
   };
   useEffect(() => { setMounted(true); load(); const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000); return () => clearInterval(t); }, []);
 
@@ -32,13 +33,14 @@ export default function Page() {
   const top = sorted[0]?.signal || null;
   const rest = sorted.slice(1);
   const clock = mounted && at ? new Date(at).toLocaleTimeString("pt-BR") : "--:--:--";
+  const degraded = sorted.some((i) => i.signal?.source === "baseline");
 
   const mkTape = () => (
     <>
       {sorted.map((it) => (
         <span key={it.symbol}>&nbsp;[{it.symbol} <span className={it.signal!.direction === "up" ? "up" : "dn"}>{arrow(it.signal!.direction)} {dirWord(it.signal!.direction)} {pct(it.signal)}</span>]&nbsp;</span>
       ))}
-      <b>&nbsp;VERIFICADO_VS_PRECO_REAL&nbsp;</b>x402<b>&nbsp;SINAL_NAO_CONSELHO&nbsp;&nbsp;</b>
+      <b>&nbsp;VALIDADO_VS_PRECO_REAL&nbsp;</b>x402:EM_BREVE<b>&nbsp;SINAL_NAO_CONSELHO&nbsp;&nbsp;</b>
     </>
   );
 
@@ -67,7 +69,7 @@ export default function Page() {
       <div className="htop">
         <div className="l">// TOP CONVICTION</div>
         <div className="l">MODEL=<b>{top?.model || "infinity-regime-v1"}</b></div>
-        <div className="l">REGIME=<b>{top ? REGIME_PT[top.regime] || top.regime : "—"}</b> → FADE</div>
+        <div className="l">REGIME=<b>{top ? REGIME_PT[top.regime] || top.regime : "—"}</b></div>
       </div>
       <div className="statement">
         {top ? (
@@ -79,7 +81,8 @@ export default function Page() {
         ) : <div className="stk">carregando sinais…</div>}
       </div>
       <div className="hnote">
-        // desmaiar a alta: modelo aponta {top ? (top.direction === "up" ? "alta" : "baixa") : "—"} em regime de tendência de alta. alvo/stop fixos. <span className="verified">✓ validado vs preço real (zkTLS)</span>
+        // {top ? sorted[0].symbol : "—"}: modelo aponta {top ? (top.direction === "up" ? "ALTA (long)" : "BAIXA (short)") : "—"} · regime {top ? REGIME_PT[top.regime] || top.regime : "—"} · horizonte 4h. <span className="verified">✓ validado vs preço real (paper engine)</span>
+        {degraded && <span style={{ color: "var(--amber)" }}> · ⚠ modelo degradado (baseline, sem dados)</span>}
       </div>
 
       {/* grid dos demais */}
@@ -170,7 +173,7 @@ function PaperPanel({ paper }: { paper: Paper | null }) {
       <T k="win rate" v={`${(p.win_rate || 0).toFixed(0)}%`} c="var(--mint)" />
       <T k="resultado" v={`${(p.pnl_total || 0) >= 0 ? "+" : ""}$${(p.pnl_total || 0).toFixed(0)}`} c={(p.pnl_total || 0) >= 0 ? "var(--mint)" : "var(--down)"} />
       <T k="ganho médio" v={`+$${(p.avg_win || 0).toFixed(2)}`} />
-      <T k="perda média" v={`$${(p.avg_loss || 0).toFixed(2)}`} c="var(--down)" />
+      <T k="perda média" v={`-$${Math.abs(p.avg_loss || 0).toFixed(2)}`} c="var(--down)" />
       <T k="trades" v={`${p.settled}`} />
     </div>
   );

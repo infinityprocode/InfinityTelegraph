@@ -29,10 +29,12 @@ def _load():
 
 
 def _baseline(asset: str, horizon: str, as_of: str) -> dict:
+    # NÃO é sinal real: usado só se o modelo/dados faltarem. Marcado com source=baseline p/ o painel
+    # avisar e o paper NÃO validar ruído.
     h = int(hashlib.sha256(f"{asset}|{horizon}|{as_of}".encode()).hexdigest()[:8], 16)
     regime = _REGIMES[h % len(_REGIMES)]
     direction = "up" if regime in ("trend_up", "mean_revert") else "down"
-    return {"direction": direction, "regime": regime, "confidence": round(0.50 + (h % 20) / 100.0, 2)}
+    return {"direction": direction, "regime": regime, "confidence": round(0.50 + (h % 20) / 100.0, 2), "source": "baseline"}
 
 
 def compute_signal(asset: str, horizon: str, as_of: str) -> dict:
@@ -50,6 +52,6 @@ def compute_signal(asset: str, horizon: str, as_of: str) -> dict:
         direction = "up" if p_up >= 0.5 else "down"
         confidence = round(max(p_up, 1 - p_up), 3)
         regime = regime_label(feat.iloc[-1])
-        return {"direction": direction, "regime": regime, "confidence": confidence}
+        return {"direction": direction, "regime": regime, "confidence": confidence, "source": "model"}
     except Exception:
         return _baseline(asset, horizon, as_of)

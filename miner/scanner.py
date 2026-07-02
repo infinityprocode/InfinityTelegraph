@@ -58,7 +58,8 @@ def _move(asset: str) -> dict | None:
 
 
 def _llm(asset: str, mv: dict, heads: list[str]) -> dict:
-    rel = [h for h in heads if any(k in h.lower() for k in ASSETS[asset])][:5]
+    pat = re.compile(r"\b(" + "|".join(re.escape(k) for k in ASSETS[asset]) + r")\b", re.I)
+    rel = [h for h in heads if pat.search(h)][:5]
     prompt = (
         f"Ativo: {asset}. Movimento recente: {mv['m3']}% em 3h ({mv['m1']}% na última hora).\n"
         f"Manchetes recentes:\n" + ("\n".join(f"- {h}" for h in rel) if rel else "- (nenhuma manchete específica)") +
@@ -105,8 +106,10 @@ def run() -> dict:
         })
     doc = {"gerado_em": int(time.time()), "modelo": MODEL, "setups": setups,
            "nota": "" if setups else "nenhum movimento explosivo agora, monitorando"}
-    with open(OUT, "w", encoding="utf-8") as f:
+    tmp = OUT + ".tmp"  # escrita atômica: leitura concorrente nunca pega JSON parcial
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
+    os.replace(tmp, OUT)
     return doc
 
 

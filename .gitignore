@@ -4,8 +4,11 @@
 !.env.example
 *.key
 *.pem
+*.secret
 keypair*.json
 wallet*.json
+burner*.json
+.wallet/
 
 # estratégia competitiva + contexto interno (NÃO publicar durante o hackathon)
 INTERNAL/
