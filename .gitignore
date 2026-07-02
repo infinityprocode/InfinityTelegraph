@@ -27,3 +27,6 @@ build/
 data/
 *.log
 .DS_Store
+
+# artefato do modelo (regenerável via miner/train.py); metrics.json É versionado
+miner/model.joblib
