@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type Signal = { asset: string; horizon: string; direction: "up" | "down"; regime: string; confidence: number; as_of: string; model: string };
+type Signal = { asset: string; horizon: string; direction: "up" | "down"; regime: string; confidence: number; as_of: string; model: string; source?: "model" | "baseline" };
 type Item = { symbol: string; signal: Signal | null };
 type Paper = { settled: number; open?: number; win_rate?: number; pnl_total?: number; avg_win?: number; avg_loss?: number; tp_sl_pct?: number; note?: string };
 type Setup = { asset: string; move_3h: number; move_1h: number; fade_dir: "short" | "long"; explosao: string; catalisador: boolean; sentimento: string; nota: string };
