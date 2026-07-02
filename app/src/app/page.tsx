@@ -33,25 +33,35 @@ export default function Page() {
   const rest = sorted.slice(1);
   const clock = mounted && at ? new Date(at).toLocaleTimeString("pt-BR") : "--:--:--";
 
+  const mkTape = () => (
+    <>
+      {sorted.map((it) => (
+        <span key={it.symbol}>&nbsp;[{it.symbol} <span className={it.signal!.direction === "up" ? "up" : "dn"}>{arrow(it.signal!.direction)} {dirWord(it.signal!.direction)} {pct(it.signal)}</span>]&nbsp;</span>
+      ))}
+      <b>&nbsp;VERIFICADO_VS_PRECO_REAL&nbsp;</b>x402<b>&nbsp;SINAL_NAO_CONSELHO&nbsp;&nbsp;</b>
+    </>
+  );
+
   return (
     <main className="wrap">
       <div className="sweep" aria-hidden="true" />
       {/* barra superior */}
       <div className="bar">
         <div className="c brand"><b>INFINITY_TELEGRAPH</b></div>
-        <div className="c">SIGNAL_ENGINE / v1</div>
-        <div className="c">NET=BASE_SEPOLIA</div>
+        <div className="c hidem">SIGNAL_ENGINE / v1</div>
+        <div className="c hidem">NET=BASE_SEPOLIA</div>
         <div className="c grow" />
-        <div className="c">HORIZON=4H</div>
+        <div className="c hidem">HORIZON=4H</div>
         <div className="c live"><span className="livedot" />LIVE {clock}</div>
       </div>
 
-      {/* marquee */}
-      <div className="marq">&nbsp;&nbsp;{sorted.map((it) => (
-        <span key={it.symbol}>[{it.symbol} <span className={it.signal!.direction === "up" ? "up" : "dn"}>{arrow(it.signal!.direction)} {dirWord(it.signal!.direction)} {pct(it.signal)}</span>] &nbsp; </span>
-      ))}<b>VERIFICADO_VS_PRECO_REAL</b> &nbsp; x402 &nbsp; <b>SINAL_NAO_CONSELHO</b> &nbsp;&nbsp; {sorted.map((it) => (
-        <span key={it.symbol + "2"}>[{it.symbol} <span className={it.signal!.direction === "up" ? "up" : "dn"}>{arrow(it.signal!.direction)}</span>] </span>
-      ))}</div>
+      {/* marquee (ticker que rola) */}
+      <div className="marq">
+        <span className="marq-inner">
+          <span>{mkTape()}</span>
+          <span aria-hidden="true">{mkTape()}</span>
+        </span>
+      </div>
 
       {/* hero statement */}
       <div className="htop">

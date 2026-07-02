@@ -37,9 +37,13 @@ body{background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothi
 .livedot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--mint);box-shadow:var(--glow) var(--mint);margin-right:7px;vertical-align:middle;animation:pulse 2.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* marquee tickers */
-.marq{overflow:hidden;white-space:nowrap;border-bottom:1px solid var(--line);background:var(--panel2);
+/* marquee tickers — rola de verdade (cripto-nativo), nunca clipa estático */
+.marq{overflow:hidden;border-bottom:1px solid var(--line);background:var(--panel2);
   font-family:var(--font-mono),monospace;font-size:12px;padding:9px 0;color:var(--mut);letter-spacing:.02em}
+.marq-inner{display:inline-block;white-space:nowrap;will-change:transform}
+@media(prefers-reduced-motion:no-preference){.marq-inner{animation:ticker 50s linear infinite}}
+@keyframes ticker{to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.marq{overflow-x:auto}}
 .marq b{color:var(--mint)} .marq .dn{color:var(--down)} .marq .up{color:var(--up)}
 
 /* hero statement gigante */
@@ -89,10 +93,16 @@ body{background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothi
   .sgrid{grid-template-columns:1fr 1fr}
   .g:nth-child(3n){border-right:1px solid var(--line)}
 }
+@media(max-width:640px){
+  .bar .hidem{display:none}
+  .htop .l:not(:first-child){display:none}
+}
 @media(max-width:520px){
   .sgrid{grid-template-columns:1fr}
   .g{border-right:0!important}
   .statement{padding:22px 16px 8px}
   .hconf{margin-left:0;text-align:left;width:100%}
+  .stk{padding-top:2px}
+  .huge{font-size:clamp(52px,17vw,90px)}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important}}
