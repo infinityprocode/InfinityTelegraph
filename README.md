@@ -36,4 +36,4 @@ on **testnet** (Base Sepolia / Solana devnet). No mainnet funds are used.
 ---
 
 Built by [Infinity Pro Code](https://infinityprocode.com.br) — bringing a production quant/trading
-stack to the intelligence layer machines will trade on.
+stack to the intelligence layer machines will trade on. Build-in-public on X: [@InfinityProCode](https://x.com/InfinityProCode).

@@ -1,0 +1,23 @@
+{
+  "name": "infinitytelegraph-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Consumer app/agent that hires the InfinityTelegraph miner on Telegraph.",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "typescript": "^5.6"
+  }
+}

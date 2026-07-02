@@ -3,12 +3,29 @@
 The consumer that **hires our own miner** — turning the signal into something a person or a bot uses,
 and driving the demand that scores our miner (see [`../docs/ARCHITECTURE.md`](../docs/ARCHITECTURE.md)).
 
-## Plan (Next.js + TypeScript)
-- A live dashboard/agent that queries the `PRICE_DIRECTION` / `MARKET_REGIME` intent through Telegraph.
-- **Off-chain path:** x402 client signs USDC micro-payments (Base Sepolia / Solana devnet) per request.
-- **On-chain path:** an ERC-8183 job (escrow → route → validate → callback) for the trustless demo.
-- Every call routes demand to our miner → scores the miner track *and* the app track at once.
+## Run locally
+
+```bash
+cd app
+cp .env.example .env.local          # set MINER_DIRECT_URL to your running miner
+npm install
+npm run dev                          # http://localhost:3000
+```
+
+Run the miner (`../miner`) first; the app calls it and renders the signal.
+
+## Structure
+
+| Path | What |
+|---|---|
+| `src/app/page.tsx` | Dashboard — enter an asset, get the signal |
+| `src/app/api/signal/route.ts` | Server route → generates demand for our miner |
+| `src/lib/telegraph.ts` | Telegraph client. **DIRECT** now; **dispatcher + x402** path is the TODO seam |
 
 ## Status
-⏳ To scaffold next, after the miner runs end-to-end on testnet and the burner wallet is set up.
-Kept as a placeholder so the repo structure and intent are clear from day one.
+- ✅ Runnable scaffold: UI + server route + Telegraph client (direct path).
+- 🔧 Wire the **x402 dispatcher path** (`getSignalViaTelegraph`) once the burner wallet + miner id exist — that's the call that routes real demand to our miner.
+- ⏳ Design polish (booh) + real-user features come in Phase 2 (app-track adoption).
+
+## Build in public
+Progress is posted from **[@InfinityProCode](https://x.com/InfinityProCode)** on X (every track rewards it).
