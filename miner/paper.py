@@ -105,7 +105,7 @@ def stats() -> dict:
     c.close()
     n = len(rows)
     if not n:
-        return {"settled": 0, "open": openn, "note": "coletando — cada trade leva 4h pra liquidar"}
+        return {"settled": 0, "open": openn, "note": "coletando: cada trade leva 4h pra liquidar"}
     wins = [r[1] for r in rows if r[0] == "win"]
     losses = [r[1] for r in rows if r[0] == "loss"]
     total = sum(r[1] for r in rows)

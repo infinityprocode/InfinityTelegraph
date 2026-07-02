@@ -10,17 +10,6 @@ const REGIME_PT: Record<string, string> = {
   trend_up: "tendência de alta", trend_down: "tendência de baixa", mean_revert: "reversão", chop: "lateral",
 };
 
-function useCount(to: number, on: boolean, dur = 900) {
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (!on) return;
-    let r = 0; const t0 = performance.now();
-    const tick = (t: number) => { const p = Math.min((t - t0) / dur, 1); setN(to * (1 - Math.pow(1 - p, 3))); if (p < 1) r = requestAnimationFrame(tick); };
-    r = requestAnimationFrame(tick); return () => cancelAnimationFrame(r);
-  }, [to, on, dur]);
-  return n;
-}
-
 export default function Page() {
   const [items, setItems] = useState<Item[]>([]);
   const [paper, setPaper] = useState<Paper | null>(null);
@@ -63,7 +52,7 @@ export default function Page() {
           <p style={{ color: "var(--mut)" }}>carregando sinais…</p>
         ) : (
           <div className="grid signals">
-            {sorted.map((it, i) => <SignalCard key={it.symbol} item={it} featured={i === 0} anim={mounted} />)}
+            {sorted.map((it, i) => <SignalCard key={it.symbol} item={it} featured={i === 0} />)}
           </div>
         )}
       </section>
@@ -81,7 +70,7 @@ export default function Page() {
 
       <section style={{ marginTop: 48 }} className="rise" aria-label="Desempenho em paper">
         <h2 className="sectitle">Desempenho (paper) <span className="soon">coletando</span></h2>
-        <PaperPanel paper={paper} anim={mounted} />
+        <PaperPanel paper={paper} />
       </section>
 
       <footer className="footer">
@@ -95,13 +84,12 @@ export default function Page() {
   );
 }
 
-function SignalCard({ item, featured, anim }: { item: Item; featured: boolean; anim: boolean }) {
+function SignalCard({ item, featured }: { item: Item; featured: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const s = item.signal;
   const up = s?.direction === "up";
   const col = up ? "var(--up)" : "var(--down)";
   const pct = Math.round((s?.confidence || 0) * 100);
-  const shown = useCount(pct, anim && !!s);
 
   const move = (e: React.PointerEvent) => {
     const el = ref.current; if (!el) return;
@@ -121,11 +109,11 @@ function SignalCard({ item, featured, anim }: { item: Item; featured: boolean; a
         <>
           {featured && (
             <div className="big" style={{ marginTop: 14, color: col }}>
-              {shown.toFixed(0)}<span style={{ fontSize: 18, color: "var(--mut)" }}>% confiança</span>
+              {pct}<span style={{ fontSize: 18, color: "var(--mut)" }}>% confiança</span>
             </div>
           )}
           <div style={{ marginTop: featured ? 16 : 14 }}>
-            {!featured && <div className="lab"><span>confiança</span><span className="mono" style={{ color: "var(--ink)" }}>{shown.toFixed(0)}%</span></div>}
+            {!featured && <div className="lab"><span>confiança</span><span className="mono" style={{ color: "var(--ink)" }}>{pct}%</span></div>}
             <div className="meter" style={{ marginTop: 5 }}>
               <i style={{ width: `${pct}%`, background: `linear-gradient(90deg,${col},color-mix(in srgb,${col} 55%,#fff))`, boxShadow: `0 0 12px ${col}` }} />
             </div>
@@ -143,10 +131,10 @@ function SignalCard({ item, featured, anim }: { item: Item; featured: boolean; a
   );
 }
 
-function PaperPanel({ paper, anim }: { paper: Paper | null; anim: boolean }) {
+function PaperPanel({ paper }: { paper: Paper | null }) {
   const has = paper && paper.settled > 0;
-  const wr = useCount(paper?.win_rate || 0, anim && !!has);
-  const pnl = useCount(paper?.pnl_total || 0, anim && !!has);
+  const wr = paper?.win_rate || 0;
+  const pnl = paper?.pnl_total || 0;
   if (!has) {
     return (
       <div className="empty">
