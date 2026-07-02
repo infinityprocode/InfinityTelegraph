@@ -50,6 +50,27 @@ def paper_stats() -> dict:
         return {"settled": 0, "note": f"paper indisponível: {e}"}
 
 
+@app.get("/paper/report")
+def paper_report() -> dict:
+    # Relatório de validação (janelas + veredito + texto pt-BR pro Telegram).
+    try:
+        import paper
+        return paper.report()
+    except Exception as e:
+        return {"veredito": f"indisponível: {e}", "texto": f"relatório indisponível: {e}"}
+
+
+@app.get("/setups")
+def setups() -> dict:
+    # Fade setups (news + momentum, local LLM). Read-only; the scanner timer writes setups.json.
+    import json as _j
+    p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "setups.json")
+    try:
+        return _j.load(open(p, encoding="utf-8"))
+    except Exception:
+        return {"setups": [], "nota": "scanner ainda não rodou"}
+
+
 @app.get("/v1/signal", response_model=SignalResponse)
 def signal(
     symbol: str = Query(..., description="asset, e.g. BTC"),

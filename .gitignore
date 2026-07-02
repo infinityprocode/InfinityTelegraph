@@ -33,3 +33,4 @@ miner/model.joblib
 
 # paper engine runtime db
 miner/paper.db
+miner/setups.json

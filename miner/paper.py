@@ -119,6 +119,57 @@ def stats() -> dict:
     }
 
 
+def _agg(rows) -> dict:
+    n = len(rows)
+    if not n:
+        return {"n": 0}
+    wins = [r[1] for r in rows if r[0] == "win"]
+    losses = [r[1] for r in rows if r[0] == "loss"]
+    pnl = sum(r[1] for r in rows)
+    return {"n": n, "win_rate": round(100 * len(wins) / n, 1), "pnl": round(pnl, 2),
+            "avg_win": round(sum(wins) / len(wins), 2) if wins else 0.0,
+            "avg_loss": round(sum(losses) / len(losses), 2) if losses else 0.0,
+            "expectancy": round(pnl / n, 3)}
+
+
+def report() -> dict:
+    """Relatório de validação: janelas 24h/7d/total + por ativo + veredito objetivo + texto pt-BR."""
+    c = _db()
+    rows = c.execute("select outcome,pnl_usd,asset,exit_ts from preds where settled=1").fetchall()
+    openn = c.execute("select count(*) from preds where settled=0").fetchone()[0]
+    c.close()
+    now = _now()
+    d1 = _agg([r for r in rows if r[3] and r[3] >= now - 86400])
+    d7 = _agg([r for r in rows if r[3] and r[3] >= now - 7 * 86400])
+    A = _agg(rows)
+    per = {}
+    for r in rows:
+        per.setdefault(r[2], []).append(r)
+    per_agg = {a: _agg(v) for a, v in per.items()}
+    n, exp, wr = A.get("n", 0), A.get("expectancy", 0), A.get("win_rate", 0)
+    if n < 100:
+        verdict = f"COLETANDO ({n}/100 trades — sem conclusão ainda)"
+    elif exp > 0 and wr >= 52:
+        verdict = f"EDGE PROMISSOR (expectancy +${exp}/trade, {wr}% acerto, N={n})"
+    elif exp > 0:
+        verdict = f"MARGINAL (expectancy +${exp}/trade, {wr}% acerto, N={n})"
+    else:
+        verdict = f"SEM EDGE (expectancy ${exp}/trade, N={n}) — nao operar, pivotar"
+    def line(lbl, a):
+        if not a.get("n"):
+            return f"{lbl}: sem trades"
+        return f"{lbl}: {a['n']} trades, {a['win_rate']}% acerto, PnL ${a['pnl']}, exp ${a['expectancy']}/trade (ganho ${a['avg_win']} / perda ${a['avg_loss']})"
+    top = sorted(per_agg.items(), key=lambda x: -(x[1].get("expectancy", 0)))
+    ativos = " | ".join(f"{a} {v['win_rate']}%/{v['n']}" for a, v in top if v.get("n"))
+    texto = ("📊 InfinityTelegraph — validacao do sinal (paper)\n\n"
+             f"VEREDITO: {verdict}\n\n"
+             f"{line('24h', d1)}\n{line('7d', d7)}\n{line('Total', A)}\n"
+             f"Em aberto: {openn}\n" + (f"Por ativo: {ativos}\n" if ativos else "") +
+             "\nRegra: N>=100 + expectancy>0 + acerto>=52% = tradeavel. Senao, coletando/pivotar. Sinal, nao conselho.")
+    return {"aberto": openn, "dia": d1, "semana": d7, "total": A, "por_ativo": per_agg,
+            "veredito": verdict, "texto": texto}
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
     if cmd == "run":
@@ -127,3 +178,6 @@ if __name__ == "__main__":
     elif cmd == "stats":
         import json
         print(json.dumps(stats(), indent=2, ensure_ascii=False))
+    elif cmd == "report":
+        import json
+        print(json.dumps(report(), indent=2, ensure_ascii=False))

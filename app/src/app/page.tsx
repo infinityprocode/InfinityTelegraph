@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 type Signal = { asset: string; horizon: string; direction: "up" | "down"; regime: string; confidence: number; as_of: string; model: string };
 type Item = { symbol: string; signal: Signal | null };
 type Paper = { settled: number; open?: number; win_rate?: number; pnl_total?: number; avg_win?: number; avg_loss?: number; tp_sl_pct?: number; note?: string };
+type Setup = { asset: string; move_3h: number; move_1h: number; fade_dir: "short" | "long"; explosao: string; catalisador: boolean; sentimento: string; nota: string };
+type Setups = { setups: Setup[]; nota?: string; gerado_em?: number };
 
 const REGIME_PT: Record<string, string> = { trend_up: "UPTREND", trend_down: "DOWNTREND", mean_revert: "MEAN-REVERT", chop: "CHOP" };
 const dirWord = (d?: string) => (d === "up" ? "LONG" : "SHORT");
@@ -15,12 +17,14 @@ const pct = (s?: Signal | null) => Math.round((s?.confidence || 0) * 100);
 export default function Page() {
   const [items, setItems] = useState<Item[]>([]);
   const [paper, setPaper] = useState<Paper | null>(null);
+  const [setups, setSetups] = useState<Setups | null>(null);
   const [at, setAt] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
 
   const load = async () => {
     try { const r = await fetch("/api/signals?horizon=4h", { cache: "no-store" }); const d = await r.json(); setItems(d.items || []); setAt(d.at || Date.now()); } catch { /* keep */ }
     try { const p = await fetch("/api/paper", { cache: "no-store" }); if (p.ok) setPaper(await p.json()); } catch { /* keep */ }
+    try { const s = await fetch("/api/setups", { cache: "no-store" }); if (s.ok) setSetups(await s.json()); } catch { /* keep */ }
   };
   useEffect(() => { setMounted(true); load(); const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000); return () => clearInterval(t); }, []);
 
@@ -86,8 +90,8 @@ export default function Page() {
 
       {/* setups de fade */}
       <div className="sec">
-        <div className="slab">SETUPS_DE_FADE <span className="badge">EM BREVE</span></div>
-        <div className="sectxt">Movimento explosivo (X% em Y min) mais catalisador de notícia lido por IA local na workstation, virando alerta de fade com trailing curto. A estratégia que já funciona no manual, automatizada e verificável.</div>
+        <div className="slab">SETUPS_DE_FADE <span className="badge">{setups && setups.setups && setups.setups.length ? "AO VIVO" : "MONITORANDO"}</span></div>
+        <SetupsPanel data={setups} />
       </div>
 
       {/* paper */}
@@ -103,6 +107,36 @@ export default function Page() {
         <div className="c" style={{ borderRight: 0 }}>BUILT_ON_BASE · TESTNET</div>
       </div>
     </main>
+  );
+}
+
+function SetupsPanel({ data }: { data: Setups | null }) {
+  const list = data?.setups || [];
+  if (!list.length) {
+    return (
+      <div className="sectxt">
+        Monitorando movimento explosivo (≥2,5% em 1h ou ≥4% em 3h) + catalisador de notícia lido por IA local na ryzen. Quando um ativo exagerar, aparece aqui um alerta de fade com o motivo. {data?.nota || ""}
+      </div>
+    );
+  }
+  return (
+    <div className="paper" style={{ gridTemplateColumns: "1fr" }}>
+      {list.map((s) => {
+        const short = s.fade_dir === "short";
+        const col = short ? "var(--down)" : "var(--up)";
+        return (
+          <div className="pcell" key={s.asset} style={{ borderRight: 0, borderBottom: "1px solid var(--line)" }}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
+              <b style={{ fontFamily: "var(--font-mono)", fontSize: 16 }}>{s.asset}</b>
+              <span className="mono" style={{ color: col, fontWeight: 700, fontSize: 13 }}>FADE → {s.fade_dir.toUpperCase()}</span>
+              <span className="mono" style={{ color: "var(--mut)", fontSize: 12 }}>explodiu {s.explosao} {s.move_3h > 0 ? "+" : ""}{s.move_3h}% (3h)</span>
+              {s.catalisador && <span className="badge" style={{ color: "var(--mint)", borderColor: "var(--mintdim)" }}>CATALISADOR</span>}
+            </div>
+            <div style={{ color: "var(--mut)", fontSize: 13, marginTop: 6, lineHeight: 1.5 }}>{s.nota}</div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
