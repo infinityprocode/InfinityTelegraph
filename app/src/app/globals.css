@@ -40,14 +40,14 @@ body{
 @keyframes slide{to{background-position:200% 50%}}
 
 .eyebrow{font-family:var(--font-mono),monospace;font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--accent);opacity:.85}
-h1.hero{font-size:clamp(34px,6vw,66px);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:16px 0 0}
+h1.hero{font-size:clamp(30px,7vw,66px);line-height:1.03;letter-spacing:-.03em;font-weight:800;margin:16px 0 0;overflow-wrap:break-word}
 .sub{color:var(--mut);font-size:clamp(15px,2vw,18px);margin-top:16px;max-width:620px;line-height:1.55}
 
 /* entrada orquestrada */
 .rise{opacity:0;transform:translateY(26px);animation:rise .8s cubic-bezier(.2,.8,.2,1) forwards}
 @keyframes rise{to{opacity:1;transform:none}}
 
-.ey{display:flex;align-items:center;gap:10px}
+.ey{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .livedot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 10px var(--up);animation:blink 2.4s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
 
@@ -57,8 +57,8 @@ h1.hero{font-size:clamp(34px,6vw,66px);line-height:1.02;letter-spacing:-.03em;fo
 
 /* cards de sinal */
 .grid{display:grid;gap:16px}
-.signals{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
-.card{position:relative;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,var(--card),var(--card2));
+.signals{grid-template-columns:repeat(auto-fill,minmax(min(230px,100%),1fr))}
+.card{position:relative;min-width:0;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,var(--card),var(--card2));
   backdrop-filter:blur(14px) saturate(140%);box-shadow:var(--shadow);padding:18px;overflow:hidden;transition:transform .22s ease,border-color .3s}
 .card::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .3s;
   background:radial-gradient(240px circle at var(--x,50%) var(--y,0),color-mix(in srgb,var(--accent) 20%,transparent),transparent 60%)}
@@ -83,5 +83,11 @@ h1.hero{font-size:clamp(34px,6vw,66px);line-height:1.02;letter-spacing:-.03em;fo
 .footer{color:var(--faint);font-size:12.5px;margin-top:64px;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap;align-items:center}
 .footer a{color:var(--mut);text-decoration:none;border-bottom:1px solid var(--line2)}
 
+@media (max-width:560px){
+  .shell{padding:40px 18px 72px}
+  .eyebrow{letter-spacing:.16em;font-size:10.5px}
+  h1.hero{font-size:clamp(28px,8.5vw,40px)}
+  .card.feat{grid-column:1 / -1}
+}
 @media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}.rise{opacity:1;transform:none}}
 @media (pointer: coarse){.card::after{display:none}.card{backdrop-filter:none}}
