@@ -40,6 +40,16 @@ def health() -> dict:
     return {"status": "ok", "model": MODEL_VERSION}
 
 
+@app.get("/paper/stats")
+def paper_stats() -> dict:
+    # Paper-engine aggregate (win rate / PnL / asymmetry). Read-only; the timer writes.
+    try:
+        import paper
+        return paper.stats()
+    except Exception as e:
+        return {"settled": 0, "note": f"paper indisponível: {e}"}
+
+
 @app.get("/v1/signal", response_model=SignalResponse)
 def signal(
     symbol: str = Query(..., description="asset, e.g. BTC"),

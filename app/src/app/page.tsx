@@ -1,141 +1,184 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type Signal = {
-  asset: string; horizon: string; direction: "up" | "down";
-  regime: string; confidence: number; as_of: string; model: string;
-};
+type Signal = { asset: string; horizon: string; direction: "up" | "down"; regime: string; confidence: number; as_of: string; model: string };
 type Item = { symbol: string; signal: Signal | null };
-
-const C = {
-  bg: "#0b0d16", panel: "#11162a", border: "#222a45", text: "#eef1f9",
-  muted: "#a6afca", faint: "#727b99", up: "#37d08a", down: "#ff5d57",
-  accent: "#4f8fff", amber: "#f5b13c",
-};
+type Paper = { settled: number; open?: number; win_rate?: number; pnl_total?: number; avg_win?: number; avg_loss?: number; tp_sl_pct?: number; note?: string };
 
 const REGIME_PT: Record<string, string> = {
-  trend_up: "tendência de alta", trend_down: "tendência de baixa",
-  mean_revert: "reversão", chop: "lateral/ruído",
+  trend_up: "tendência de alta", trend_down: "tendência de baixa", mean_revert: "reversão", chop: "lateral",
 };
 
-export default function Dashboard() {
+function useCount(to: number, on: boolean, dur = 900) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!on) return;
+    let r = 0; const t0 = performance.now();
+    const tick = (t: number) => { const p = Math.min((t - t0) / dur, 1); setN(to * (1 - Math.pow(1 - p, 3))); if (p < 1) r = requestAnimationFrame(tick); };
+    r = requestAnimationFrame(tick); return () => cancelAnimationFrame(r);
+  }, [to, on, dur]);
+  return n;
+}
+
+export default function Page() {
   const [items, setItems] = useState<Item[]>([]);
+  const [paper, setPaper] = useState<Paper | null>(null);
   const [at, setAt] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   const load = async () => {
     try {
       const r = await fetch("/api/signals?horizon=4h", { cache: "no-store" });
-      const d = await r.json();
-      setItems(d.items || []);
-      setAt(d.at || Date.now());
-    } catch { /* keep last good */ } finally { setLoading(false); }
+      const d = await r.json(); setItems(d.items || []); setAt(d.at || Date.now());
+    } catch { /* keep */ }
+    try { const p = await fetch("/api/paper", { cache: "no-store" }); if (p.ok) setPaper(await p.json()); } catch { /* keep */ }
   };
 
   useEffect(() => {
-    load();
+    setMounted(true); load();
     const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000);
     return () => clearInterval(t);
   }, []);
 
+  const sorted = [...items].sort((a, b) => (b.signal?.confidence || 0) - (a.signal?.confidence || 0));
+
   return (
-    <main style={{ minHeight: "100vh", background: C.bg, color: C.text }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "40px 24px 80px" }}>
-        {/* header */}
-        <header style={{ display: "flex", alignItems: "baseline", gap: 14, flexWrap: "wrap" }}>
-          <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: -0.3 }}>
-            Infinity<span style={{ color: C.accent }}>Telegraph</span>
-          </h1>
-          <span style={{ color: C.muted, fontSize: 14 }}>sinais de mercado verificáveis · horizonte 4h</span>
-          <span style={{ marginLeft: "auto", color: C.faint, fontSize: 12, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, background: C.up, boxShadow: `0 0 8px ${C.up}` }} />
-            {at ? `atualizado ${new Date(at).toLocaleTimeString("pt-BR")}` : "…"} · auto 30s
-          </span>
-        </header>
+    <main className="shell">
+      <header className="rise">
+        <div className="ey"><span className="livedot" /><span className="eyebrow">Telegraph · Base · x402 · testnet</span></div>
+        <h1 className="hero">Sinais de mercado<br /><span className="grad">verificáveis</span> para máquinas.</h1>
+        <p className="sub">
+          Direção, confiança e regime por ativo, checáveis contra o preço que realmente aconteceu. Servidos por um
+          miner na rede Telegraph. Sinal, não conselho: aqui a gente <span className="serif">prova</span> antes de confiar.
+        </p>
+        <p className="eyebrow" style={{ marginTop: 18, opacity: .6 }}>
+          {mounted && at ? `atualizado ${new Date(at).toLocaleTimeString("pt-BR")} · auto 30s · horizonte 4h` : "conectando…"}
+        </p>
+      </header>
 
-        {/* live signals */}
-        <section style={{ marginTop: 28 }}>
-          <SectionTitle>Sinais ao vivo</SectionTitle>
-          {loading && !items.length ? (
-            <p style={{ color: C.muted }}>carregando…</p>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 14 }}>
-              {items.map((it) => <SignalCard key={it.symbol} item={it} />)}
-            </div>
-          )}
-        </section>
+      <section style={{ marginTop: 44 }} className="rise" aria-label="Sinais ao vivo">
+        <h2 className="sectitle">Sinais ao vivo</h2>
+        {!items.length ? (
+          <p style={{ color: "var(--mut)" }}>carregando sinais…</p>
+        ) : (
+          <div className="grid signals">
+            {sorted.map((it, i) => <SignalCard key={it.symbol} item={it} featured={i === 0} anim={mounted} />)}
+          </div>
+        )}
+      </section>
 
-        {/* coming: fade setups (strategy 1) */}
-        <section style={{ marginTop: 34 }}>
-          <SectionTitle>Setups de fade <Soon /></SectionTitle>
-          <Placeholder text="Detecção de movimento explosivo (X% em Y min) + filtro de notícia → alerta de fade com trailing curto. Esta é a estratégia 1 (seu edge provado)." />
-        </section>
+      <section style={{ marginTop: 48 }} className="rise" aria-label="Setups de fade">
+        <h2 className="sectitle">Setups de fade <span className="soon">em breve</span></h2>
+        <div className="empty">
+          <p style={{ color: "var(--ink)", fontWeight: 600, fontSize: 15 }}>Desmaiar o exagero, com disciplina.</p>
+          <p style={{ color: "var(--mut)", fontSize: 13.5, lineHeight: 1.6, marginTop: 8, maxWidth: 640 }}>
+            Movimento explosivo (X% em Y minutos) mais um catalisador de notícia lido por IA local viram um alerta de
+            fade com trailing curto. É a estratégia que já funciona no manual, virando gatilho automático.
+          </p>
+        </div>
+      </section>
 
-        {/* coming: paper performance */}
-        <section style={{ marginTop: 34 }}>
-          <SectionTitle>Desempenho (paper) <Soon /></SectionTitle>
-          <Placeholder text="Win rate, PnL e assimetria (ganho médio vs perda média) da estratégia em paper — pra provar o sinal antes de qualquer dinheiro real." />
-        </section>
-      </div>
+      <section style={{ marginTop: 48 }} className="rise" aria-label="Desempenho em paper">
+        <h2 className="sectitle">Desempenho (paper) <span className="soon">coletando</span></h2>
+        <PaperPanel paper={paper} anim={mounted} />
+      </section>
+
+      <footer className="footer">
+        <span>InfinityTelegraph</span>
+        <span>·</span>
+        <a href="https://infinityprocode.com.br" target="_blank" rel="noopener">Infinity Pro Code</a>
+        <a href="https://x.com/InfinityProCode" target="_blank" rel="noopener">@InfinityProCode</a>
+        <span style={{ marginLeft: "auto", color: "var(--faint)" }}>construído na Base · testnet · sinal, não conselho financeiro</span>
+      </footer>
     </main>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1.4, color: C.muted, fontWeight: 700, marginBottom: 14 }}>
-      {children}
-    </h2>
-  );
-}
+function SignalCard({ item, featured, anim }: { item: Item; featured: boolean; anim: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const s = item.signal;
+  const up = s?.direction === "up";
+  const col = up ? "var(--up)" : "var(--down)";
+  const pct = Math.round((s?.confidence || 0) * 100);
+  const shown = useCount(pct, anim && !!s);
 
-function Soon() {
-  return <span style={{ marginLeft: 8, fontSize: 10, color: C.amber, background: "rgba(245,177,60,.12)", padding: "2px 7px", borderRadius: 99, letterSpacing: 0.5 }}>em breve</span>;
-}
+  const move = (e: React.PointerEvent) => {
+    const el = ref.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty("--x", `${e.clientX - r.left}px`);
+    el.style.setProperty("--y", `${e.clientY - r.top}px`);
+  };
 
-function Placeholder({ text }: { text: string }) {
   return (
-    <div style={{ border: `1px dashed ${C.border}`, borderRadius: 14, padding: 20, color: C.faint, fontSize: 13, lineHeight: 1.6, background: "rgba(255,255,255,.01)" }}>
-      {text}
+    <div ref={ref} onPointerMove={move} className={`card${featured ? " feat" : ""}`} style={{ ["--accent" as string]: col }}>
+      <span className="edge" style={{ background: col, boxShadow: `0 0 22px ${col}` }} />
+      <div className="tick">
+        <span className="sym">{item.symbol}</span>
+        <span className="dir" style={{ color: col }}>{up ? "▲" : "▼"} {up ? "LONG" : "SHORT"}</span>
+      </div>
+      {s ? (
+        <>
+          {featured && (
+            <div className="big" style={{ marginTop: 14, color: col }}>
+              {shown.toFixed(0)}<span style={{ fontSize: 18, color: "var(--mut)" }}>% confiança</span>
+            </div>
+          )}
+          <div style={{ marginTop: featured ? 16 : 14 }}>
+            {!featured && <div className="lab"><span>confiança</span><span className="mono" style={{ color: "var(--ink)" }}>{shown.toFixed(0)}%</span></div>}
+            <div className="meter" style={{ marginTop: 5 }}>
+              <i style={{ width: `${pct}%`, background: `linear-gradient(90deg,${col},color-mix(in srgb,${col} 55%,#fff))`, boxShadow: `0 0 12px ${col}` }} />
+            </div>
+          </div>
+          <div style={{ marginTop: 12, fontSize: 12.5, color: "var(--mut)" }}>
+            regime <b style={{ color: "var(--ink)" }}>{REGIME_PT[s.regime] || s.regime}</b>
+            {up && s.regime.startsWith("trend_up") && <span style={{ color: "var(--faint)" }}> · fade da alta</span>}
+          </div>
+          <div className="mono" style={{ marginTop: 6, fontSize: 10, color: "var(--faint)" }}>{s.model}</div>
+        </>
+      ) : (
+        <div style={{ color: "var(--faint)", fontSize: 12, marginTop: 12 }}>sem dado</div>
+      )}
     </div>
   );
 }
 
-function SignalCard({ item }: { item: Item }) {
-  const s = item.signal;
-  if (!s) {
+function PaperPanel({ paper, anim }: { paper: Paper | null; anim: boolean }) {
+  const has = paper && paper.settled > 0;
+  const wr = useCount(paper?.win_rate || 0, anim && !!has);
+  const pnl = useCount(paper?.pnl_total || 0, anim && !!has);
+  if (!has) {
     return (
-      <div style={{ border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, background: C.panel }}>
-        <div style={{ fontWeight: 700, fontSize: 18 }}>{item.symbol}</div>
-        <div style={{ color: C.faint, fontSize: 12, marginTop: 8 }}>sem dado</div>
+      <div className="empty">
+        <p style={{ color: "var(--ink)", fontWeight: 600, fontSize: 15 }}>Provando o sinal antes de qualquer dinheiro.</p>
+        <p style={{ color: "var(--mut)", fontSize: 13.5, lineHeight: 1.6, marginTop: 8, maxWidth: 640 }}>
+          Cada sinal vira um scalp simulado (alvo e stop fixos, tipo os 5 dólares), liquidado contra o preço real depois
+          de 4h. Win rate, resultado e assimetria aparecem aqui conforme os trades maturam. {paper?.note ? paper.note : ""}
+        </p>
+        {paper && typeof paper.open === "number" && (
+          <p className="mono" style={{ color: "var(--faint)", fontSize: 12, marginTop: 12 }}>{paper.open} em aberto · {paper.settled} liquidados</p>
+        )}
       </div>
     );
   }
-  const up = s.direction === "up";
-  const col = up ? C.up : C.down;
-  const pct = Math.round(s.confidence * 100);
+  const p = paper!;
+  const Tile = ({ k, v, c }: { k: string; v: string; c?: string }) => (
+    <div className="card stat" style={{ padding: 18 }}>
+      <span className="k">{k}</span>
+      <span className="big" style={{ fontSize: 30, color: c || "var(--ink)" }}>{v}</span>
+    </div>
+  );
   return (
-    <div style={{ border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, background: C.panel, position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 0, left: 0, width: 3, height: "100%", background: col }} />
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontWeight: 700, fontSize: 18 }}>{s.asset}</span>
-        <span style={{ marginLeft: "auto", color: col, fontWeight: 800, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>
-          {up ? "▲" : "▼"} {up ? "LONG" : "SHORT"}
-        </span>
+    <div className="grid signals">
+      <Tile k="win rate" v={`${wr.toFixed(0)}%`} c="var(--up)" />
+      <Tile k="resultado" v={`${pnl >= 0 ? "+" : ""}$${pnl.toFixed(0)}`} c={pnl >= 0 ? "var(--up)" : "var(--down)"} />
+      <Tile k="ganho médio" v={`+$${(p.avg_win || 0).toFixed(2)}`} />
+      <Tile k="perda média" v={`$${(p.avg_loss || 0).toFixed(2)}`} />
+      <div className="card stat" style={{ padding: 18 }}>
+        <span className="k">trades</span>
+        <span className="big" style={{ fontSize: 30 }}>{p.settled}<span style={{ fontSize: 14, color: "var(--faint)" }}> liq.</span></span>
+        <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{p.open || 0} em aberto · alvo/stop ±{p.tp_sl_pct || 0.5}%</span>
       </div>
-      <div style={{ marginTop: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: C.muted, marginBottom: 4 }}>
-          <span>confiança</span><span style={{ color: C.text, fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
-        </div>
-        <div style={{ height: 6, background: "#0b0f1e", borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ width: `${pct}%`, height: "100%", background: col, borderRadius: 99 }} />
-        </div>
-      </div>
-      <div style={{ marginTop: 12, fontSize: 12, color: C.muted }}>
-        regime <b style={{ color: C.text }}>{REGIME_PT[s.regime] || s.regime}</b>
-      </div>
-      <div style={{ marginTop: 4, fontSize: 10, color: C.faint }}>{s.model}</div>
     </div>
   );
 }

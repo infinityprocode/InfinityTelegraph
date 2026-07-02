@@ -1,0 +1,87 @@
+:root{
+  --bg:#07080d; --bg2:#0b0d16;
+  --ink:#eef1fb; --mut:#9aa6c8; --faint:#5f6a90;
+  --line:rgba(140,150,220,.11); --line2:rgba(140,150,220,.20);
+  --card:rgba(20,24,44,.55); --card2:rgba(12,15,28,.72);
+  --accent:#4f8fff; --cyan:#38d0ff; --indigo:#6d7bff;
+  --up:#2fe0a0; --down:#ff5d6c;
+  --shadow:0 34px 90px -46px rgba(70,90,230,.55), 0 2px 0 rgba(190,205,255,.05) inset;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(1100px 620px at 82% -12%, rgba(79,143,255,.12), transparent 60%),
+    radial-gradient(820px 520px at -8% 8%, rgba(109,123,255,.09), transparent 55%),
+    linear-gradient(170deg,var(--bg),var(--bg2) 55%,#06070c);
+  color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased;
+  font-family:var(--font-display),ui-sans-serif,system-ui,sans-serif;
+  overflow-x:hidden;
+}
+.mono{font-family:var(--font-mono),ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.serif{font-family:var(--font-serif),Georgia,serif;font-style:italic}
+
+/* fundo vivo: orbs em matizes irmãos + grão */
+.orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.5;will-change:transform}
+.orb.a{width:44vw;height:44vw;left:-6vw;top:-8vw;background:radial-gradient(circle,#2b6bff,transparent 70%);animation:drift1 30s ease-in-out infinite}
+.orb.b{width:38vw;height:38vw;right:-6vw;top:6vh;background:radial-gradient(circle,#38d0ff,transparent 70%);animation:drift2 36s ease-in-out infinite}
+.orb.c{width:40vw;height:40vw;left:24vw;bottom:-14vw;background:radial-gradient(circle,#6d7bff,transparent 70%);animation:drift3 42s ease-in-out infinite}
+@keyframes drift1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vw,5vh) scale(1.12)}}
+@keyframes drift2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-5vw,7vh) scale(1.15)}}
+@keyframes drift3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vw,-6vh) scale(1.1)}}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.045;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.shell{position:relative;z-index:2;max-width:1120px;margin:0 auto;padding:56px 24px 96px}
+
+/* texto gradiente animado (matizes irmãos) */
+.grad{background:linear-gradient(100deg,#5a9bff,#38d0ff,#8a7bff);background-size:220% 100%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;animation:slide 8s linear infinite}
+@keyframes slide{to{background-position:200% 50%}}
+
+.eyebrow{font-family:var(--font-mono),monospace;font-size:11.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--accent);opacity:.85}
+h1.hero{font-size:clamp(34px,6vw,66px);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin:16px 0 0}
+.sub{color:var(--mut);font-size:clamp(15px,2vw,18px);margin-top:16px;max-width:620px;line-height:1.55}
+
+/* entrada orquestrada */
+.rise{opacity:0;transform:translateY(26px);animation:rise .8s cubic-bezier(.2,.8,.2,1) forwards}
+@keyframes rise{to{opacity:1;transform:none}}
+
+.ey{display:flex;align-items:center;gap:10px}
+.livedot{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 10px var(--up);animation:blink 2.4s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+
+.sectitle{font-family:var(--font-mono),monospace;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--mut);display:flex;align-items:center;gap:12px;margin:0 0 18px}
+.sectitle::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+.soon{font-family:var(--font-mono),monospace;font-size:9.5px;letter-spacing:.12em;color:#f5b13c;background:rgba(245,177,60,.12);padding:3px 8px;border-radius:99px}
+
+/* cards de sinal */
+.grid{display:grid;gap:16px}
+.signals{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.card{position:relative;border:1px solid var(--line);border-radius:20px;background:linear-gradient(180deg,var(--card),var(--card2));
+  backdrop-filter:blur(14px) saturate(140%);box-shadow:var(--shadow);padding:18px;overflow:hidden;transition:transform .22s ease,border-color .3s}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;opacity:0;transition:opacity .3s;
+  background:radial-gradient(240px circle at var(--x,50%) var(--y,0),color-mix(in srgb,var(--accent) 20%,transparent),transparent 60%)}
+.card:hover::after{opacity:1}
+.card .edge{position:absolute;left:0;top:0;width:3px;height:100%}
+.card.feat{grid-column:span 2}
+@media(max-width:560px){.card.feat{grid-column:span 1}}
+
+.tick{display:flex;align-items:baseline;gap:10px}
+.sym{font-weight:800;font-size:22px;letter-spacing:-.02em}
+.dir{margin-left:auto;font-family:var(--font-mono),monospace;font-weight:700;font-size:14px;letter-spacing:.05em;display:flex;align-items:center;gap:6px}
+.meter{height:7px;border-radius:99px;background:rgba(8,11,22,.7);overflow:hidden;margin-top:6px}
+.meter > i{display:block;height:100%;border-radius:99px}
+.lab{display:flex;justify-content:space-between;font-size:11px;color:var(--mut)}
+.big{font-family:var(--font-mono),monospace;font-size:clamp(26px,4vw,40px);font-weight:700;letter-spacing:-.02em;line-height:1}
+
+/* placeholders premium (não caixa tracejada morta) */
+.empty{border:1px solid var(--line);border-radius:20px;padding:22px 22px;background:linear-gradient(180deg,rgba(20,24,44,.35),rgba(12,15,28,.5));position:relative;overflow:hidden}
+.empty::before{content:"";position:absolute;right:-60px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(79,143,255,.14),transparent 70%)}
+.stat{display:flex;flex-direction:column;gap:4px}
+.stat .k{font-family:var(--font-mono),monospace;font-size:11px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
+.footer{color:var(--faint);font-size:12.5px;margin-top:64px;padding-top:20px;border-top:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.footer a{color:var(--mut);text-decoration:none;border-bottom:1px solid var(--line2)}
+
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}.rise{opacity:1;transform:none}}
+@media (pointer: coarse){.card::after{display:none}.card{backdrop-filter:none}}
