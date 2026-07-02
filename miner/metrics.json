@@ -1,0 +1,27 @@
+{
+  "horizon_h": 4,
+  "assets": [
+    "BTC",
+    "ETH",
+    "SOL",
+    "BNB"
+  ],
+  "rows": 35812,
+  "test_rows": 10744,
+  "base_rate_up": 0.5016,
+  "test_accuracy": 0.5187,
+  "test_auc": 0.5323,
+  "test_accuracy_top30pct_confidence": 0.5557,
+  "features": [
+    "ret1",
+    "ret4",
+    "ret12",
+    "ret24",
+    "vol12",
+    "vol24",
+    "mom_ratio",
+    "rsi14",
+    "ma_fast_slow",
+    "range_pos"
+  ]
+}
