@@ -1,0 +1,40 @@
+# Telegraph miner descriptor — InfinityTelegraph
+# Public by design: agents and validators read this to route to us and interpret our answers.
+# NO secrets here. `auth.env_var` names an environment variable; the raw key lives only in .env.
+#
+# `id` is assigned at on-chain registration (placeholder until then).
+# After editing, re-hash and re-register:  sha256sum telegraph-miner.yaml | awk '{print "0x"$1}'
+
+version: "1"
+kind: miner
+id: 0                       # TODO: set to the numeric id assigned at registration
+slug: infinity-market-regime
+protocol: generic
+name: Infinity Market Regime Signal
+description: >
+  Verifiable market-intelligence signals for crypto assets — regime classification and price
+  direction with a calibrated confidence. Answers are checkable against realized price action,
+  so scoring reflects real predictive skill. Built by Infinity Pro Code on a production quant stack.
+
+base_url: https://REPLACE_WITH_MINER_HTTPS_HOST
+
+auth:
+  type: header
+  header_name: X-API-Key
+  env_var: INFINITY_MINER_API_KEY   # value lives in the node's env, never in this file
+
+endpoints:
+  - path: /signal                   # the path Telegraph exposes
+    external_path: /v1/signal       # the path on our upstream API
+    method: GET
+    param_map:
+      asset: symbol                 # telegraph_param: our_param
+      horizon: horizon
+
+semantics:
+  signal_mapping:
+    type: market_regime
+    label_field: direction          # the field validators read as our answer
+  supported_intents:
+    - PRICE_DIRECTION
+    - MARKET_REGIME

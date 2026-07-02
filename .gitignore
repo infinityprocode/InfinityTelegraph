@@ -1,0 +1,29 @@
+# segredos e ambiente
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+keypair*.json
+wallet*.json
+
+# estratégia competitiva + contexto interno (NÃO publicar durante o hackathon)
+INTERNAL/
+CLAUDE.md
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# node
+node_modules/
+.next/
+dist/
+build/
+
+# dados/artefatos
+data/
+*.log
+.DS_Store
