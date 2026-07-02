@@ -30,9 +30,15 @@ export async function getSignalDirect(symbol: string, horizon = "1h"): Promise<S
 
 // DISPATCHER + x402 path — TODO: sign USDC payment (Base Sepolia) on the 402 challenge and retry.
 // This is the call that generates real demand for our miner. Implement after wallet + miner id.
+// For now it transparently uses the DIRECT path so the dashboard works end-to-end today.
 export async function getSignalViaTelegraph(symbol: string, horizon = "1h"): Promise<Signal> {
-  if (!DISPATCHER || !MINER_ID) return getSignalDirect(symbol, horizon);
-  // const url = `${DISPATCHER}/v1/${MINER_ID}/signal?symbol=${symbol}&horizon=${horizon}`;
-  // 1) fetch -> expect 402  2) sign USDC payment w/ x402 client  3) retry with payment header
-  throw new Error("x402 path not wired yet — see docs/ARCHITECTURE.md");
+  // TODO(x402): when DISPATCHER + MINER_ID + funded burner exist, do 402 -> sign USDC -> retry.
+  return getSignalDirect(symbol, horizon);
+}
+
+// Batch fetch for the watchlist dashboard. Resilient: a failing symbol becomes null, not a crash.
+export async function getSignals(symbols: string[], horizon = "1h"): Promise<(Signal | null)[]> {
+  return Promise.all(
+    symbols.map((s) => getSignalViaTelegraph(s, horizon).catch(() => null)),
+  );
 }
