@@ -1,0 +1,62 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>InfinityTelegraph · Editorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#0b0c11;--ink2:#0e1017;--ivory:#f2ece0;--mut:#9c9689;--faint:#6a655c;--line:rgba(220,210,190,.12);
+ --gold:#e3b778;--up:#4bd39b;--down:#ec6a76;--teal:#1fb3a6;--sap:#3f6bff}
+*{margin:0;box-sizing:border-box}
+body{background:var(--ink);color:var(--ivory);font-family:'Hanken Grotesk',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.serif{font-family:'Fraunces',serif}
+/* hero atmosférico (mesh que deriva + grão) */
+.hero{position:relative;min-height:74vh;display:flex;flex-direction:column;justify-content:center;padding:70px 40px 40px;overflow:hidden;max-width:1180px;margin:0 auto}
+.mesh{position:absolute;inset:-20%;z-index:0;filter:blur(10px)}
+.mesh::before,.mesh::after,.mesh i{content:"";position:absolute;border-radius:50%;mix-blend-mode:screen;opacity:.55}
+.mesh::before{width:60vw;height:60vw;left:-6vw;top:-10vw;background:radial-gradient(circle,#1fb3a6,transparent 62%);animation:m1 34s ease-in-out infinite}
+.mesh::after{width:52vw;height:52vw;right:-6vw;top:2vw;background:radial-gradient(circle,#3f6bff,transparent 62%);animation:m2 40s ease-in-out infinite}
+.mesh i{width:46vw;height:46vw;left:26vw;bottom:-16vw;background:radial-gradient(circle,#7a49d6,transparent 62%);animation:m3 46s ease-in-out infinite}
+@keyframes m1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(7vw,5vw) scale(1.15)}}
+@keyframes m2{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(-6vw,6vw) scale(1.2)}}
+@keyframes m3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(5vw,-6vw) scale(1.1)}}
+.grain{position:absolute;inset:0;z-index:1;opacity:.06;mix-blend-mode:overlay;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.hero>*{position:relative;z-index:2}
+.eye{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--gold)}
+h1{font-family:'Fraunces',serif;font-weight:400;font-size:clamp(44px,7.2vw,92px);line-height:1;letter-spacing:-.02em;margin:20px 0 0;max-width:15ch}
+h1 em{font-style:italic;color:transparent;background:linear-gradient(100deg,#7fe0d3,#8fb0ff,#e3b778);-webkit-background-clip:text;background-clip:text}
+.lead{font-size:clamp(16px,1.6vw,19px);color:var(--mut);max-width:56ch;margin-top:24px;line-height:1.6}
+.hrow{display:flex;gap:26px;align-items:center;margin-top:30px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint)}
+/* signals editorial */
+.sec{max-width:1180px;margin:0 auto;padding:20px 40px 80px}
+.slab{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--mut);display:flex;gap:14px;align-items:center;margin:40px 0 24px}
+.slab::after{content:"";flex:1;height:1px;background:var(--line)}
+.grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:0;border-top:1px solid var(--line)}
+.sig{border-bottom:1px solid var(--line);border-right:1px solid var(--line);padding:30px 28px}
+.sig:nth-child(3n){border-right:0}
+.sig.big{grid-row:span 1}
+.ssym{font-family:'Fraunces',serif;font-size:clamp(30px,3vw,44px);letter-spacing:-.02em}
+.sdir{font-family:'JetBrains Mono',monospace;font-size:13px;letter-spacing:.05em;color:var(--down);margin-top:2px}
+.sconf{font-family:'Fraunces',serif;font-size:clamp(40px,5vw,72px);line-height:1;margin-top:18px;color:var(--ivory)}
+.sconf small{font-family:'Hanken Grotesk';font-size:15px;color:var(--mut);letter-spacing:0}
+.srg{color:var(--faint);font-size:13px;margin-top:14px}
+.line{height:2px;background:var(--line);margin-top:16px;position:relative}
+.line i{position:absolute;left:0;top:0;height:100%;background:linear-gradient(90deg,var(--down),var(--gold))}
+</style></head><body>
+<section class="hero">
+  <div class="mesh"><i></i></div><div class="grain"></div>
+  <div class="eye">Telegraph · Base · x402 · testnet</div>
+  <h1 class="serif">Inteligência de mercado que máquinas podem <em>confiar</em>.</h1>
+  <p class="lead">Direção, convicção e regime por ativo, verificados contra o preço que realmente aconteceu. Servidos por um miner na rede Telegraph. Prova antes de confiança.</p>
+  <div class="hrow"><span>02:55:43 · auto 30s</span><span>·</span><span>horizonte 4h</span><span>·</span><span>4 ativos ao vivo</span></div>
+</section>
+<section class="sec">
+  <div class="slab">Sinais ao vivo</div>
+  <div class="grid">
+    <div class="sig big"><div class="ssym serif">ETH</div><div class="sdir mono">▼ SHORT</div><div class="sconf serif">57<small>% convicção</small></div><div class="srg">regime tendência de alta · fade da alta</div><div class="line"><i style="width:57%"></i></div></div>
+    <div class="sig"><div class="ssym serif">BTC</div><div class="sdir mono">▼ SHORT</div><div class="sconf serif">55<small>%</small></div><div class="srg">tendência de alta · fade</div><div class="line"><i style="width:55%"></i></div></div>
+    <div class="sig"><div class="ssym serif">BNB</div><div class="sdir mono">▼ SHORT</div><div class="sconf serif">55<small>%</small></div><div class="srg">tendência de alta · fade</div><div class="line"><i style="width:55%"></i></div></div>
+    <div class="sig"><div class="ssym serif">SOL</div><div class="sdir mono">▼ SHORT</div><div class="sconf serif">51<small>%</small></div><div class="srg">tendência de alta · fade</div><div class="line"><i style="width:51%"></i></div></div>
+    <div class="sig" style="grid-column:span 2;display:flex;align-items:center"><div><div class="slab" style="margin:0 0 6px">Setups de fade · em breve</div><div style="color:var(--mut);font-size:14px;max-width:52ch;line-height:1.6">Movimento explosivo mais catalisador de notícia lido por IA local, virando alerta de fade com trailing curto. A estratégia que já funciona no manual, automatizada.</div></div></div>
+  </div>
+</section>
+</body></html>

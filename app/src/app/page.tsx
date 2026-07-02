@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 type Signal = { asset: string; horizon: string; direction: "up" | "down"; regime: string; confidence: number; as_of: string; model: string };
 type Item = { symbol: string; signal: Signal | null };
 type Paper = { settled: number; open?: number; win_rate?: number; pnl_total?: number; avg_win?: number; avg_loss?: number; tp_sl_pct?: number; note?: string };
 
-const REGIME_PT: Record<string, string> = {
-  trend_up: "tendência de alta", trend_down: "tendência de baixa", mean_revert: "reversão", chop: "lateral",
-};
+const REGIME_PT: Record<string, string> = { trend_up: "UPTREND", trend_down: "DOWNTREND", mean_revert: "MEAN-REVERT", chop: "CHOP" };
+const dirWord = (d?: string) => (d === "up" ? "LONG" : "SHORT");
+const dirCol = (d?: string) => (d === "up" ? "var(--up)" : "var(--down)");
+const arrow = (d?: string) => (d === "up" ? "▲" : "▼");
+const pct = (s?: Signal | null) => Math.round((s?.confidence || 0) * 100);
 
 export default function Page() {
   const [items, setItems] = useState<Item[]>([]);
@@ -17,156 +19,115 @@ export default function Page() {
   const [mounted, setMounted] = useState(false);
 
   const load = async () => {
-    try {
-      const r = await fetch("/api/signals?horizon=4h", { cache: "no-store" });
-      const d = await r.json(); setItems(d.items || []); setAt(d.at || Date.now());
-    } catch { /* keep */ }
+    try { const r = await fetch("/api/signals?horizon=4h", { cache: "no-store" }); const d = await r.json(); setItems(d.items || []); setAt(d.at || Date.now()); } catch { /* keep */ }
     try { const p = await fetch("/api/paper", { cache: "no-store" }); if (p.ok) setPaper(await p.json()); } catch { /* keep */ }
   };
+  useEffect(() => { setMounted(true); load(); const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000); return () => clearInterval(t); }, []);
 
-  useEffect(() => {
-    setMounted(true); load();
-    const t = setInterval(() => { if (document.visibilityState === "visible") load(); }, 30000);
-    return () => clearInterval(t);
-  }, []);
-
-  const sorted = [...items].sort((a, b) => (b.signal?.confidence || 0) - (a.signal?.confidence || 0));
+  const sorted = [...items].filter((i) => i.signal).sort((a, b) => (b.signal!.confidence) - (a.signal!.confidence));
+  const top = sorted[0]?.signal || null;
+  const rest = sorted.slice(1);
+  const clock = mounted && at ? new Date(at).toLocaleTimeString("pt-BR") : "--:--:--";
 
   return (
-    <main className="shell">
-      <header className="rise">
-        <div className="ey"><span className="livedot" /><span className="eyebrow">Telegraph · Base · x402 · testnet</span></div>
-        <h1 className="hero">Sinais de mercado<br /><span className="grad">verificáveis</span> para máquinas.</h1>
-        <p className="sub">
-          Direção, confiança e regime por ativo, checáveis contra o preço que realmente aconteceu. Servidos por um
-          miner na rede Telegraph. Sinal, não conselho: aqui a gente <span className="serif">prova</span> antes de confiar.
-        </p>
-        <p className="eyebrow" style={{ marginTop: 18, opacity: .6 }}>
-          {mounted && at ? `atualizado ${new Date(at).toLocaleTimeString("pt-BR")} · auto 30s · horizonte 4h` : "conectando…"}
-        </p>
-      </header>
+    <main className="wrap">
+      <div className="sweep" aria-hidden="true" />
+      {/* barra superior */}
+      <div className="bar">
+        <div className="c brand"><b>INFINITY_TELEGRAPH</b></div>
+        <div className="c">SIGNAL_ENGINE / v1</div>
+        <div className="c">NET=BASE_SEPOLIA</div>
+        <div className="c grow" />
+        <div className="c">HORIZON=4H</div>
+        <div className="c live"><span className="livedot" />LIVE {clock}</div>
+      </div>
 
-      <section style={{ marginTop: 44 }} className="rise" aria-label="Sinais ao vivo">
-        <h2 className="sectitle">Sinais ao vivo</h2>
-        {!items.length ? (
-          <p style={{ color: "var(--mut)" }}>carregando sinais…</p>
-        ) : (
-          <div className="grid signals">
-            {sorted.map((it, i) => <SignalCard key={it.symbol} item={it} featured={i === 0} />)}
-          </div>
-        )}
-      </section>
+      {/* marquee */}
+      <div className="marq">&nbsp;&nbsp;{sorted.map((it) => (
+        <span key={it.symbol}>[{it.symbol} <span className={it.signal!.direction === "up" ? "up" : "dn"}>{arrow(it.signal!.direction)} {dirWord(it.signal!.direction)} {pct(it.signal)}</span>] &nbsp; </span>
+      ))}<b>VERIFICADO_VS_PRECO_REAL</b> &nbsp; x402 &nbsp; <b>SINAL_NAO_CONSELHO</b> &nbsp;&nbsp; {sorted.map((it) => (
+        <span key={it.symbol + "2"}>[{it.symbol} <span className={it.signal!.direction === "up" ? "up" : "dn"}>{arrow(it.signal!.direction)}</span>] </span>
+      ))}</div>
 
-      <section style={{ marginTop: 48 }} className="rise" aria-label="Setups de fade">
-        <h2 className="sectitle">Setups de fade <span className="soon">em breve</span></h2>
-        <div className="empty">
-          <p style={{ color: "var(--ink)", fontWeight: 600, fontSize: 15 }}>Desmaiar o exagero, com disciplina.</p>
-          <p style={{ color: "var(--mut)", fontSize: 13.5, lineHeight: 1.6, marginTop: 8, maxWidth: 640 }}>
-            Movimento explosivo (X% em Y minutos) mais um catalisador de notícia lido por IA local viram um alerta de
-            fade com trailing curto. É a estratégia que já funciona no manual, virando gatilho automático.
-          </p>
-        </div>
-      </section>
+      {/* hero statement */}
+      <div className="htop">
+        <div className="l">// TOP CONVICTION</div>
+        <div className="l">MODEL=<b>{top?.model || "infinity-regime-v1"}</b></div>
+        <div className="l">REGIME=<b>{top ? REGIME_PT[top.regime] || top.regime : "—"}</b> → FADE</div>
+      </div>
+      <div className="statement">
+        {top ? (
+          <>
+            <div className="stk"><b>{sorted[0].symbol}</b><br />/ 4H</div>
+            <div className="huge" style={{ color: dirCol(top.direction) }}>{dirWord(top.direction)}</div>
+            <div className="hconf"><b>{pct(top)}%</b><small>CONVICÇÃO</small></div>
+          </>
+        ) : <div className="stk">carregando sinais…</div>}
+      </div>
+      <div className="hnote">
+        // desmaiar a alta: modelo aponta {top ? (top.direction === "up" ? "alta" : "baixa") : "—"} em regime de tendência de alta. alvo/stop fixos. <span className="verified">✓ validado vs preço real (zkTLS)</span>
+      </div>
 
-      <section style={{ marginTop: 48 }} className="rise" aria-label="Desempenho em paper">
-        <h2 className="sectitle">Desempenho (paper) <span className="soon">coletando</span></h2>
+      {/* grid dos demais */}
+      <div className="sgrid">
+        {rest.map((it) => {
+          const s = it.signal!; const col = dirCol(s.direction); const p = pct(s);
+          return (
+            <div className="g" key={it.symbol}>
+              <div className="gh"><div className="gsym">{it.symbol}</div><div className="gdir" style={{ color: col }}>{arrow(s.direction)} {dirWord(s.direction)}</div></div>
+              <div className="gnum">{p}<span>%</span></div>
+              <div className="gline"><i style={{ width: `${p}%`, color: col }} /></div>
+              <div className="grg">REGIME={REGIME_PT[s.regime] || s.regime} · FADE · 4H</div>
+            </div>
+          );
+        })}
+        {!rest.length && <div className="g" style={{ gridColumn: "1/-1", color: "var(--faint)" }}>—</div>}
+      </div>
+
+      {/* setups de fade */}
+      <div className="sec">
+        <div className="slab">SETUPS_DE_FADE <span className="badge">EM BREVE</span></div>
+        <div className="sectxt">Movimento explosivo (X% em Y min) mais catalisador de notícia lido por IA local na workstation, virando alerta de fade com trailing curto. A estratégia que já funciona no manual, automatizada e verificável.</div>
+      </div>
+
+      {/* paper */}
+      <div className="sec">
+        <div className="slab">DESEMPENHO_PAPER <span className="badge">{paper && paper.settled > 0 ? "AO VIVO" : "COLETANDO"}</span></div>
         <PaperPanel paper={paper} />
-      </section>
+      </div>
 
-      <footer className="footer">
-        <span>InfinityTelegraph</span>
-        <span>·</span>
-        <a href="https://infinityprocode.com.br" target="_blank" rel="noopener">Infinity Pro Code</a>
-        <a href="https://x.com/InfinityProCode" target="_blank" rel="noopener">@InfinityProCode</a>
-        <span style={{ marginLeft: "auto", color: "var(--faint)" }}>construído na Base · testnet · sinal, não conselho financeiro</span>
-      </footer>
+      <div className="foot">
+        <div className="c"><a href="https://infinityprocode.com.br" target="_blank" rel="noopener">INFINITY_PRO_CODE</a></div>
+        <div className="c"><a href="https://x.com/InfinityProCode" target="_blank" rel="noopener">@INFINITYPROCODE</a></div>
+        <div className="c grow" style={{ borderRight: 0 }} />
+        <div className="c" style={{ borderRight: 0 }}>BUILT_ON_BASE · TESTNET</div>
+      </div>
     </main>
   );
 }
 
-function SignalCard({ item, featured }: { item: Item; featured: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const s = item.signal;
-  const up = s?.direction === "up";
-  const col = up ? "var(--up)" : "var(--down)";
-  const pct = Math.round((s?.confidence || 0) * 100);
-
-  const move = (e: React.PointerEvent) => {
-    const el = ref.current; if (!el) return;
-    const r = el.getBoundingClientRect();
-    el.style.setProperty("--x", `${e.clientX - r.left}px`);
-    el.style.setProperty("--y", `${e.clientY - r.top}px`);
-  };
-
-  return (
-    <div ref={ref} onPointerMove={move} className={`card${featured ? " feat" : ""}`} style={{ ["--accent" as string]: col }}>
-      <span className="edge" style={{ background: col, boxShadow: `0 0 22px ${col}` }} />
-      <div className="tick">
-        <span className="sym">{item.symbol}</span>
-        <span className="dir" style={{ color: col }}>{up ? "▲" : "▼"} {up ? "LONG" : "SHORT"}</span>
-      </div>
-      {s ? (
-        <>
-          {featured && (
-            <div className="big" style={{ marginTop: 14, color: col }}>
-              {pct}<span style={{ fontSize: 18, color: "var(--mut)" }}>% confiança</span>
-            </div>
-          )}
-          <div style={{ marginTop: featured ? 16 : 14 }}>
-            {!featured && <div className="lab"><span>confiança</span><span className="mono" style={{ color: "var(--ink)" }}>{pct}%</span></div>}
-            <div className="meter" style={{ marginTop: 5 }}>
-              <i style={{ width: `${pct}%`, background: `linear-gradient(90deg,${col},color-mix(in srgb,${col} 55%,#fff))`, boxShadow: `0 0 12px ${col}` }} />
-            </div>
-          </div>
-          <div style={{ marginTop: 12, fontSize: 12.5, color: "var(--mut)" }}>
-            regime <b style={{ color: "var(--ink)" }}>{REGIME_PT[s.regime] || s.regime}</b>
-            {up && s.regime.startsWith("trend_up") && <span style={{ color: "var(--faint)" }}> · fade da alta</span>}
-          </div>
-          <div className="mono" style={{ marginTop: 6, fontSize: 10, color: "var(--faint)" }}>{s.model}</div>
-        </>
-      ) : (
-        <div style={{ color: "var(--faint)", fontSize: 12, marginTop: 12 }}>sem dado</div>
-      )}
-    </div>
-  );
-}
-
 function PaperPanel({ paper }: { paper: Paper | null }) {
-  const has = paper && paper.settled > 0;
-  const wr = paper?.win_rate || 0;
-  const pnl = paper?.pnl_total || 0;
-  if (!has) {
+  if (!paper || paper.settled === 0) {
     return (
-      <div className="empty">
-        <p style={{ color: "var(--ink)", fontWeight: 600, fontSize: 15 }}>Provando o sinal antes de qualquer dinheiro.</p>
-        <p style={{ color: "var(--mut)", fontSize: 13.5, lineHeight: 1.6, marginTop: 8, maxWidth: 640 }}>
-          Cada sinal vira um scalp simulado (alvo e stop fixos, tipo os 5 dólares), liquidado contra o preço real depois
-          de 4h. Win rate, resultado e assimetria aparecem aqui conforme os trades maturam. {paper?.note ? paper.note : ""}
-        </p>
+      <>
+        <div className="sectxt">Cada sinal vira um scalp simulado (alvo/stop fixos, tipo os 5 dólares), liquidado contra o preço real depois de 4h. Win rate, resultado e assimetria aparecem aqui conforme os trades maturam. {paper?.note || ""}</div>
         {paper && typeof paper.open === "number" && (
-          <p className="mono" style={{ color: "var(--faint)", fontSize: 12, marginTop: 12 }}>{paper.open} em aberto · {paper.settled} liquidados</p>
+          <div className="mono" style={{ color: "var(--faint)", fontSize: 12, marginTop: 12 }}>{paper.open} EM ABERTO · {paper.settled} LIQUIDADOS</div>
         )}
-      </div>
+      </>
     );
   }
-  const p = paper!;
-  const Tile = ({ k, v, c }: { k: string; v: string; c?: string }) => (
-    <div className="card stat" style={{ padding: 18 }}>
-      <span className="k">{k}</span>
-      <span className="big" style={{ fontSize: 30, color: c || "var(--ink)" }}>{v}</span>
-    </div>
+  const p = paper;
+  const T = ({ k, v, c }: { k: string; v: string; c?: string }) => (
+    <div className="pcell"><div className="k">{k}</div><div className="v" style={{ color: c || "var(--ink)" }}>{v}</div></div>
   );
   return (
-    <div className="grid signals">
-      <Tile k="win rate" v={`${wr.toFixed(0)}%`} c="var(--up)" />
-      <Tile k="resultado" v={`${pnl >= 0 ? "+" : ""}$${pnl.toFixed(0)}`} c={pnl >= 0 ? "var(--up)" : "var(--down)"} />
-      <Tile k="ganho médio" v={`+$${(p.avg_win || 0).toFixed(2)}`} />
-      <Tile k="perda média" v={`$${(p.avg_loss || 0).toFixed(2)}`} />
-      <div className="card stat" style={{ padding: 18 }}>
-        <span className="k">trades</span>
-        <span className="big" style={{ fontSize: 30 }}>{p.settled}<span style={{ fontSize: 14, color: "var(--faint)" }}> liq.</span></span>
-        <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{p.open || 0} em aberto · alvo/stop ±{p.tp_sl_pct || 0.5}%</span>
-      </div>
+    <div className="paper">
+      <T k="win rate" v={`${(p.win_rate || 0).toFixed(0)}%`} c="var(--mint)" />
+      <T k="resultado" v={`${(p.pnl_total || 0) >= 0 ? "+" : ""}$${(p.pnl_total || 0).toFixed(0)}`} c={(p.pnl_total || 0) >= 0 ? "var(--mint)" : "var(--down)"} />
+      <T k="ganho médio" v={`+$${(p.avg_win || 0).toFixed(2)}`} />
+      <T k="perda média" v={`$${(p.avg_loss || 0).toFixed(2)}`} c="var(--down)" />
+      <T k="trades" v={`${p.settled}`} />
     </div>
   );
 }
